@@ -55,9 +55,14 @@ def locate_firmware(
                 log("[NTV-Firmware] - Checking {}... ", port.device)
                 with serial.Serial(port.device, baudrate, timeout=1) as sp:
                     sleep(1)
+                    numBytes = sp.inWaiting()
                     sp.read(9999)
+                    sp.reset_input_buffer()
                     sp.write("IDENTIFY\n")
                     id = sp.readline()
+                    if id == "":
+                        log("NOT_NTV_FIRMWARE\n")
+                        continue
                     _,f_uid,f_id,f_version = id.strip().split(":")
 
                     if firmware_id is not None and firmware_id != f_id:
@@ -77,6 +82,7 @@ def locate_firmware(
                 if hasattr(e,'errno') and e.errno == 16:
                     log("DEVICE_BUSY\n")
                 else:
+                    print e
                     log("NOT_NTV_FIRMWARE\n")
 
         return None

@@ -1,8 +1,10 @@
+from __future__ import absolute_import
 import sys
 import serial
 from serial.tools import list_ports
 import glob
 from time import sleep
+from twisted.internet import reactor, defer
 
 
 def locate_firmware(
@@ -28,7 +30,15 @@ def locate_firmware(
         delay (int):                Seconds to delay between iterations
         max_attempts (int):         Number of iterations to search for. Defaults
                                     to `0` (infinite)
+
+    Returns
+    -------
+    Deferred
+        Deferred object that resolves once the port has been found
     """
+    d = defer.Deferred()
+    attempts = 0
+
     # outstream = sys.stdout if outstream is None else outstream
     def log (msg, *args):
         if not silent:
@@ -88,16 +98,21 @@ def locate_firmware(
         return None
 
 
-
-    try:
-        found_port = None
-        attempts = 0
-        while found_port is None:
+    def deferred_search( attempts = 0, max_attempts = 0):
+        try:
             found_port = search()
             attempts += 1
-            if max_attempts > 0 and attempts >= max_attempts:
-                break
-            sleep(delay)
-        return found_port
-    except KeyboardInterrupt:
-        return None
+            if found_port is None:
+                if max_attempts > 0 and attempts >= max_attempts:
+                    d.errback()
+                else:
+                    reactor.callLater(delay, deferred_search, attempts=attempts, max_attempts=max_attempts)
+
+            else:
+                d.callback(found_port)
+        except Exception as err:
+            d.errback(err)
+
+
+    reactor.callLater(0, deferred_search, max_attempts=max_attempts )
+    return d

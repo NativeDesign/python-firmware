@@ -69,7 +69,21 @@ def locate_firmware(
                     sp.read(9999)
                     sp.reset_input_buffer()
                     sp.write("IDENTIFY\n")
-                    id = sp.readline()
+
+                    replied = False
+                    tries = 0
+                    id = None
+                    while not replied:
+                        id = sp.readline()
+                        if len(id) == 0:
+                            tries += 1
+                            if tries > 6:
+                                id = ''
+                                replied = True
+                        else:
+                            replied = True
+
+
                     if id == "":
                         log("NOT_NTV_FIRMWARE\n")
                         continue

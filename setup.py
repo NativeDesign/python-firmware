@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='ntv-firmware',
-      version='1.0.1',
+      version='1.0.2',
       description='Utility function for locating the serial port of a particular firmware device.',
       url='https://git.native.com/ntv/python-firmware',
       author='Alan Pich',
